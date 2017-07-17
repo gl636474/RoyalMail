@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<config>
+	<modules>
+		<gareth_royalmail>
+			<version>0.0.1</version>
+		</gareth_royalmail>
+	</modules>
+	<global>       
+		<models>
+			<!-- The carrier is conceptually part of the business model so
+			these lines will cause Magento to load these classes -->
+            <gareth_royalmail>
+            	<!-- Prefix for all model class names -->
+                <class>Gareth_RoyalMail_Model</class>
+            </gareth_royalmail>
+        </models>
+        <helpers>
+            <gareth_royalmail>
+            <!-- Prefix for all helper class names -->
+                <class>Gareth_RoyalMail_Helper</class>
+            </gareth_royalmail>
+        </helpers>
+        
+        <sales>
+            <shipping>
+                <carriers>
+                    <gareth_royalmail>
+                    	<!-- Seems this is the actual class name. However
+                    	this statement will not cause Magento to load the
+                    	class. -->
+                        <class>Gareth_RoyalMail_Model_Carrier</class>
+                    </gareth_royalmail>
+                </carriers>
+            </shipping>
+        </sales>
+    </global>
+    <default>
+        <carriers>
+            <gareth_royalmail>
+                <active>1</active>
+                <sort_order>10</sort_order>
+                <model>gareth_royalmail/carrier</model>
+                <title>Gareth RoyalMail</title>
+                <sort_order>10</sort_order>
+                <sallowspecific>1</sallowspecific>
+            </gareth_royalmail>
+        </carriers>
+    </default>
+</config>
