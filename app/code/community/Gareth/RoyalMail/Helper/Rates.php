@@ -66,8 +66,6 @@ class Gareth_RoyalMail_Helper_Rates extends
 	 */
 	public function getPrices()
 	{
-		Mage::log('getPrices:1');
-		
 		$return = array(
 				// First Class
 				1 => array(
@@ -130,9 +128,6 @@ class Gareth_RoyalMail_Helper_Rates extends
 						array(4, 2, 20.000, 29.55),
 				),				
 		);
-
-		Mage::log('getPrices:2');
-		
 		return $return;
 	}
 	
@@ -149,7 +144,7 @@ class Gareth_RoyalMail_Helper_Rates extends
 	public function getInternalMethodName($name_id, $size_id, $insurance_id)
 	{
 		$internal_name = $this->getNames()[$name_id][1];
-		$internal_size = $this->getSizes()[$size_id][1];
+		$internal_size = $this->getSizes()[$size_id][5];
 		$internal_insurance = $this->getInsuranceLimits()[$insurance_id][1];
 		
 		$internal_method_name = $internal_name.$internal_size.$internal_insurance;
@@ -215,7 +210,8 @@ class Gareth_RoyalMail_Helper_Rates extends
 	 */
 	public function getMethodsForCriteria($length, $width, $depth, $volume, $weight)
 	{
-		// TODO error in here somewhere
+		Mage::log('getMethodsForCriteria('.$length.'x'.$width.'x'.$depth.'cm '.$volume.'cm3 '.$weight.'kg)', null, null, true);
+		
 		$methods = array();
 		$prices = $this->getPrices();
 		
@@ -234,11 +230,14 @@ class Gareth_RoyalMail_Helper_Rates extends
 				
 				$maxWeight = $detail[2];
 				
+				$insuranceLookup = $detail[1];
+				$methodName = $this->getMethodName($deliveryMethodLookup, $sizeLimitsLookup, $insuranceLookup);
+				$internalName = $this->getInternalMethodName($deliveryMethodLookup, $sizeLimitsLookup, $insuranceLookup);
+				
+				Mage::log('Comparing to '.$internalName.' '.$maxLength.'x'.$maxWidth.'x'.$maxDepth.'cm '.$maxWeight.'kg', null, null, true);
+				
 				if ($length <= $maxLength && $width <= $maxWidth && $depth <= $maxDepth && $weight <= $maxWeight)
 				{
-					$insuranceLookup = $detail[1];
-					$methodName = $this->getMethodName($deliveryMethodLookup, $sizeLimitsLookup, $insuranceLookup);
-					$internalName = $this->getInternalMethodName($deliveryMethodLookup, $sizeLimitsLookup, $insuranceLookup);
 					$cost = $detail[3];
 					
 					$methods[] = array($internalName, $methodName, $cost);
