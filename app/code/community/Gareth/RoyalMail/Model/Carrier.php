@@ -1,20 +1,8 @@
 <?php
 /**
- * Calculates the shipping price given the user selection for 1st/2nd class
- * and signed for/standard. Prices vary according to weight and size:
- * 
- * Letter		100g	24cm x 16.5cm x 0.5cm //unused
- * Large Letter	100g	35.3cm x 25cm x 2.5cm
- * 				250g
- * 				500g
- * 				750g
- * Small Parcel	1kg		45cm x 35cm x 16cm
- * 				2kg
- * Med Parcel	1kg		61cm x 46cm x 46cm
- * 				2kg
- * 				5kg
- * 				10kg
- * 				20kg
+ * Notes:
+ * Loading helper works OK. If there is an error then Magento will default to
+ * the cart page (instead of showing blank or stacktrace).
  * 
  * @author gareth
  */
@@ -22,13 +10,13 @@ class Gareth_RoyalMail_Model_Carrier
     extends Mage_Shipping_Model_Carrier_Abstract
     implements Mage_Shipping_Model_Carrier_Interface
 {
-	
     /**
      * Carriers code, as defined in parent class
      *
      * @var string
      */
     protected $_code = 'gareth_royalmail';
+    
     /**
      * Returns available shipping rates for this carrier
      *
@@ -40,84 +28,85 @@ class Gareth_RoyalMail_Model_Carrier
     	/** @var Gareth_RoyalMail_Helper_Config $config */
     	$config = Mage::helper('gareth_royalmail/config');
     	
-    	// inspect weight, dimentions and volume
+    	$default_length = $config->getDefaultLength();
+    	$default_width = $config->getDefaultWidth();
+    	$default_depth = $config->getDefaultDepth();
+    	$default_weight = $config->getDefaultWeight();
+    	
+    	// inspect all items for total weight/volume and max width/height/depth
     	$total_weight = 0;
     	$total_volume = 0;
-    	$max_length = 0;
+		$max_length = 0;
     	$max_width = 0;
     	$max_depth = 0;
     	
-    	// getAllItems() returns array of Mage_Sales_Model_Quote_Item
-    	// one per unique item in the cart.
+    	//Mage::log('# items = '.count($request->getAllItems()));
     	foreach ($request->getAllItems() as $item) {
+
+    		// TODO need to times by quantity of the product in this item
+    		// getWeight() returns weight of the product even if user specified
+    		// quantity of 10
+    		$total_weight += $item->getWeight();
     		
-    		// some info is in the item the rest is in the product
-    		//$product = Mage::getModel('catalog/product')->load($item->getProduct()->getId());
-    		$product = $item->getProduct()->getId();
+    		// must load full product to get EAVs (e.g. is_organic) loaded
+    		$full_product = Mage::getModel('catalog/product')->load($item->getProduct()->getId());
     		
-    		$quantity = $item->getTotalQty();
+    		Mage::log('product: '.$full_product->getName(), null, null, true);
     		
-    		// weight in kg
-    		$weight = $item->getWeight();
-    		if ($weight == 0) // NB: null == 0
+    		$product_height = $full_product->getData('height');
+    		Mage::log('product height: '.$product_height, null, null, true);
+    		if (is_null($product_height))
     		{
-    			$weight = $config->getDefaultWeight();
+    			$product_height = $default_length;
     		}
-    		$weight = $weight * $quantity;
+    		$max_length = max($max_length, $product_height);
     		
-    		// dimentions in cm
-    		$length = $product->getLength();
-    		if ($length== 0) // NB: null == 0
+    		$product_width = $full_product->getData('width');
+    		Mage::log('product width: '.$product_width, null, null, true);
+    		if (is_null($product_width))
     		{
-    			$length= $config->getDefaultLength();
+    			$product_width = $default_width;
     		}
-    		$width = $product->getWidth();
-    		if ($width == 0) // NB: null == 0
-    		{
-    			$width = $config->getDefaultWidth();
-    		}
-    		$depth = $product->getDepth();
-    		if ($depth == 0) // NB: null == 0
-    		{
-    			$depth = $config->getDefaultDepth();
-    		}
+    		$max_width = max($max_width, $product_width);
     		
-    		// volume in cm3
-    		$volume = $length* $width * $depth * $quantity;
-    		
-    		$total_weight += $weight;
-    		$total_volume += $volume;
-    		$max_length = max($max_length, $length);
-    		$max_width = max($max_width, $width);
-    		$max_depth = max($max_depth, $depth);
+    		$product_depth = $full_product->getData('depth');
+    		Mage::log('product depth: '.$product_depth, null, null, true);
+    		if (is_null($product_depth))
+    		{
+    			$product_depth =$default_depth;
+    		}
+    		$max_depth= max($max_depth, $product_depth);
+    	
+    		// TODO need to times by quantity of the product in this item
+    		$product_volume = $product_depth * $product_height * $product_width;
+    		$total_volume += $product_volume;
     	}
+
+    	Mage::log('total volume: '.$total_volume, null, null, true);
+    	Mage::log('total weight: '.$total_weight, null, null, true);
     	
-    	/** @var Gareth_RoyalMail_Helper_ShippingRates $shippingRates */
-    	$shippingRates = Mage::helper('gareth_royalmail/shippingrates');
-    	$availableRates = $shippingRates->getMethodsForCriteria($max_length, $max_width, $max_depth, $total_volume, $total_weight);
+    	/** @var Gareth_RoyalMail_Helper_Rates $rates */
+    	$rates = Mage::helper('gareth_royalmail/rates');
     	
-    	/** @var Mage_Shipping_Model_Rate_Result $result */
-    	$result = Mage::getModel('shipping/rate_result');
-    	
-    	foreach($availableRates as $availableRate)
-    	{
-    		$internalName = $availableRate[0];
-    		$name = $availableRate[1];
-    		$cost = $availableRate[2];
-    		
-    		/** @var Mage_Shipping_Model_Rate_Result_Method $rate */
-    		$rate = Mage::getModel('shipping/rate_result_method');
-    		$rate->setCarrier($this->_code);
-    		$rate->setCarrierTitle($this->getConfigData('title'));
-    		$rate->setMethod($internalName);
-    		$rate->setMethodTitle($name);
-    		$rate->setCost($cost);
-    		$rate->setPrice($cost); // cost + handling fee
-    		
-    		$result->append($rate);
-    	}
+		/** @var Mage_Shipping_Model_Rate_Result $result */
+        $result = Mage::getModel('shipping/rate_result');
+        
+         foreach ($rates->getMethodsForCriteria($max_length, $max_width, $max_depth, (int)ceil($total_volume), $total_weight) as $rate)
+        {
+        	/** @var Mage_Shipping_Model_Rate_Result_Method $rate */
+        	$mage_rate = Mage::getModel('shipping/rate_result_method');
+        	$mage_rate->setCarrier($this->_code);
+        	$mage_rate->setCarrierTitle($this->getConfigData('title'));
+        	$mage_rate->setMethod($rate[0]);
+        	$mage_rate->setMethodTitle($rate[1]);
+        	$mage_rate->setCost($rate[2]);
+        	$mage_rate->setPrice($rate[2]);
+        	
+        	$result->append($mage_rate);
+        }
         return $result;
     }
+    
     /**
      * Returns Allowed shipping methods
      *
@@ -129,17 +118,7 @@ class Gareth_RoyalMail_Model_Carrier
     	
     	/** @var Gareth_RoyalMail_Helper_ShippingRates $shippingRates */
     	$shippingRates = Mage::helper('gareth_royalmail/shippingrates');
-    	$allMethodNames = $shippingRates->getAllMethodNames();
     	
-    	// TODO remove any that are not allowed.
-    	
-    	$msg = "";
-    	foreach ($allMethodNames as $internalName => $name)
-    	{
-    		$msg = $msg.$internalName.'=>'.$name.'\n';
-    	}
-    	Mage::log($msg, null, null, true);
-    	
-    	return $allMethodNames;
+    	return $shippingRates->getAllMethodNames();
     }
 }

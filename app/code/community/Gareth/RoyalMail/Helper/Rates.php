@@ -3,7 +3,7 @@
  * @author gareth
  *
  */
-class Gareth_RoyalMail_Helper_ShippingRates extends
+class Gareth_RoyalMail_Helper_Rates extends
     Mage_Core_Helper_Abstract
 {
 	/**
@@ -66,7 +66,9 @@ class Gareth_RoyalMail_Helper_ShippingRates extends
 	 */
 	public function getPrices()
 	{
-		return array(
+		Mage::log('getPrices:1');
+		
+		$return = array(
 				// First Class
 				1 => array(
 						array(1, 1, 0.100, 0.65),
@@ -128,6 +130,10 @@ class Gareth_RoyalMail_Helper_ShippingRates extends
 						array(4, 2, 20.000, 29.55),
 				),				
 		);
+
+		Mage::log('getPrices:2');
+		
+		return $return;
 	}
 	
 	/**
@@ -140,11 +146,11 @@ class Gareth_RoyalMail_Helper_ShippingRates extends
 	 * @param int $insurance_id the IS of the insurance class
 	 * @return string the internal name
 	 */
-	public function getInternalMethodName(int $name_id, int $size_id, int $insurance_id)
+	public function getInternalMethodName($name_id, $size_id, $insurance_id)
 	{
-		$internal_name = getNames()[$name_id][1];
-		$internal_size = getSizes()[$size_id][1];
-		$internal_insurance = getInsuranceLimits()[$insurance_id][1];
+		$internal_name = $this->getNames()[$name_id][1];
+		$internal_size = $this->getSizes()[$size_id][1];
+		$internal_insurance = $this->getInsuranceLimits()[$insurance_id][1];
 		
 		$internal_method_name = $internal_name.$internal_size.$internal_insurance;
 	
@@ -163,9 +169,9 @@ class Gareth_RoyalMail_Helper_ShippingRates extends
 	 */
 	public function getMethodName($name_id, $size_id, $insurance_id)
 	{		
-		$name = getNames()[$name_id][0];
-		$size = getSizes()[$size_id][0];
-		$insurance = getInsuranceLimits()[$insurance_id][0];
+		$name = $this->getNames()[$name_id][0];
+		$size = $this->getSizes()[$size_id][0];
+		$insurance = $this->getInsuranceLimits()[$insurance_id][0];
 		
 		$method_name = $name.' '.$size.' '.$insurance;
 		
@@ -180,7 +186,7 @@ class Gareth_RoyalMail_Helper_ShippingRates extends
 	public function getAllMethodNames()
 	{
 		$methodNames = array();
-		$prices = getPrices();
+		$prices = $this->getPrices();
 		foreach ($prices as $deliveryMethodLookup => $details)
 		{
 			// $details = array(array(size_lookup, insurance_lookup, weight_limit_kg, price))
@@ -190,8 +196,8 @@ class Gareth_RoyalMail_Helper_ShippingRates extends
 				$size = $detail[0];
 				$insurance = $detail[1];
 				
-				$methodName = getMethodName($deliveryMethodLookup, $size, $insurance);
-				$internameName = getInternalMethodName($deliveryMethodLookup, $size, $insurance);
+				$methodName = $this->getMethodName($deliveryMethodLookup, $size, $insurance);
+				$internameName = $this->getInternalMethodName($deliveryMethodLookup, $size, $insurance);
 				
 				$methodNames[$internalName] = $methodName;
 			}
@@ -207,11 +213,12 @@ class Gareth_RoyalMail_Helper_ShippingRates extends
 	 * @param float $weight
 	 * @return array(array(internal_method_name, method_name, cost))
 	 */
-	public function getMethodsForCriteria(float $length, float $width, float $depth, int $volume, float $weight)
+	public function getMethodsForCriteria($length, $width, $depth, $volume, $weight)
 	{
+		// TODO error in here somewhere
 		$methods = array();
+		$prices = $this->getPrices();
 		
-		$prices = getPrices();
 		foreach ($prices as $deliveryMethodLookup => $details)
 		{
 			// $details = array(array(size_lookup, insurance_lookup, weight_limit_kg, price))
@@ -219,7 +226,7 @@ class Gareth_RoyalMail_Helper_ShippingRates extends
 			foreach ($details as $detail)
 			{
 				$sizeLimitsLookup = $detail[0];
-				$sizeLimits = getSizes()[$sizeLimitsLookup];
+				$sizeLimits = $this->getSizes()[$sizeLimitsLookup];
 				$maxLength = $sizeLimits[1];
 				$maxWidth = $sizeLimits[2];
 				$maxDepth = $sizeLimits[3];
@@ -230,8 +237,8 @@ class Gareth_RoyalMail_Helper_ShippingRates extends
 				if ($length <= $maxLength && $width <= $maxWidth && $depth <= $maxDepth && $weight <= $maxWeight)
 				{
 					$insuranceLookup = $detail[1];
-					$methodName = getMethodName($deliveryMethodLookup, $sizeLimitsLookup, $insuranceLookup);
-					$internalName = getInternalMethodName($deliveryMethodLookup, $sizeLimitsLookup, $insuranceLookup);
+					$methodName = $this->getMethodName($deliveryMethodLookup, $sizeLimitsLookup, $insuranceLookup);
+					$internalName = $this->getInternalMethodName($deliveryMethodLookup, $sizeLimitsLookup, $insuranceLookup);
 					$cost = $detail[3];
 					
 					$methods[] = array($internalName, $methodName, $cost);

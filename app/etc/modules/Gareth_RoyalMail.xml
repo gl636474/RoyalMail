@@ -4,10 +4,6 @@
 		<gareth_royalmail>
 			<active>true</active>
 			<codePool>community</codePool>
-			 <depends>
-                <Mage_Shipping />
-<!--                 <Mage_Adminhtml /> -->
-            </depends>
 		</gareth_royalmail>
 	</modules>
 </config>
