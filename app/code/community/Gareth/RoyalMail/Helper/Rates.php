@@ -168,7 +168,7 @@ class Gareth_RoyalMail_Helper_Rates extends
 		$size = $this->getSizes()[$size_id][0];
 		$insurance = $this->getInsuranceLimits()[$insurance_id][0];
 		
-		$method_name = $name.' '.$size.' '.$insurance;
+		$method_name = $name.' '.$size.' ('.$insurance.')';
 		
 		return $method_name;
 	}
