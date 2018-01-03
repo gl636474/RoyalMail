@@ -78,7 +78,7 @@ class Gareth_RoyalMail_Helper_Rates extends
 						array(3, 1, 2.000, 5.50),
 						array(4, 1, 1.000, 5.70),
 						array(4, 1, 2.000, 8.95),
-						array(4, 1, 3.000, 15.85),
+						array(4, 1, 5.000, 15.85),
 						array(4, 1, 10.000, 21.90),
 						array(4, 1, 20.000, 33.40),
 				),
@@ -93,7 +93,7 @@ class Gareth_RoyalMail_Helper_Rates extends
 						array(3, 1, 2.000, 2.90),
 						array(4, 1, 1.000, 5.00),
 						array(4, 1, 2.000, 5.00),
-						array(4, 1, 3.000, 13.75),
+						array(4, 1, 5.000, 13.75),
 						array(4, 1, 10.000, 20.25),
 						array(4, 1, 20.000, 28.55),
 				),
@@ -108,7 +108,7 @@ class Gareth_RoyalMail_Helper_Rates extends
 						array(3, 2, 2.000, 6.50),
 						array(4, 2, 1.000, 6.70),
 						array(4, 2, 2.000, 9.95),
-						array(4, 2, 3.000, 16.85),
+						array(4, 2, 5.000, 16.85),
 						array(4, 2, 10.000, 22.90),
 						array(4, 2, 20.000, 34.40),
 				),				
@@ -123,7 +123,7 @@ class Gareth_RoyalMail_Helper_Rates extends
 						array(3, 2, 2.000, 3.90),
 						array(4, 2, 1.000, 6.00),
 						array(4, 2, 2.000, 6.00),
-						array(4, 2, 3.000, 14.75),
+						array(4, 2, 5.000, 14.75),
 						array(4, 2, 10.000, 21.25),
 						array(4, 2, 20.000, 29.55),
 				),				
@@ -210,6 +210,7 @@ class Gareth_RoyalMail_Helper_Rates extends
 	 */
 	public function getMethodsForCriteria($length, $width, $depth, $volume, $weight)
 	{
+		$this->sortArgs($length, $width, $depth);
 		Mage::log('getMethodsForCriteria('.$length.'x'.$width.'x'.$depth.'cm '.$volume.'cm3 '.$weight.'kg)', null, null, true);
 		
 		$methods = array();
@@ -239,12 +240,31 @@ class Gareth_RoyalMail_Helper_Rates extends
 				if ($length <= $maxLength && $width <= $maxWidth && $depth <= $maxDepth && $weight <= $maxWeight)
 				{
 					$cost = $detail[3];
-					
 					$methods[] = array($internalName, $methodName, $cost);
+					Mage::log('   Selected '.$methodName.' at £'.$cost, null, null, true);
 					break;
 				}
 			}
 		}
 		return $methods;		
+	}
+	
+	/**
+	 * Sorts the values of the given args from highest to lowest. All args are
+	 * passed by reference and will be modified by this function.
+	 * 
+	 * $a = 5;
+	 * $b = 2;
+	 * $c = 3;
+	 * sortArgs($a, $b, $c);
+	 * // Now $a = 5; $b = 3; $c = 2;
+	 */
+	protected function sortArgs(&$a, &$b, &$c)
+	{
+		$args_array = [$a, $b, $c];
+		sort($args_array);
+		$a = $args_array[0];
+		$b = $args_array[1];
+		$c = $args_array[2];
 	}
 }
