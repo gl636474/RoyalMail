@@ -25,6 +25,12 @@ class Gareth_RoyalMail_Model_Carrier
      */
     public function collectRates(Mage_Shipping_Model_Rate_Request $request)
     {
+    	/** Check we are enabled */
+    	if (!$this->getConfigFlag('active'))
+    	{
+    		return false;
+    	} 
+    	
     	/** @var Gareth_RoyalMail_Helper_Config $config */
     	$config = Mage::helper('gareth_royalmail/config');
     	
@@ -43,43 +49,35 @@ class Gareth_RoyalMail_Model_Carrier
     	//Mage::log('# items = '.count($request->getAllItems()));
     	foreach ($request->getAllItems() as $item) {
 
-    		// TODO need to times by quantity of the product in this item
-    		// getWeight() returns weight of the product even if user specified
-    		// quantity of 10
-    		$total_weight += $item->getWeight();
-    		
+    		// $item is Mage_Sales_Model_Quote_Item
     		// must load full product to get EAVs (e.g. is_organic) loaded
-    		$full_product = Mage::getModel('catalog/product')->load($item->getProduct()->getId());
-    		
+    		// otherwise they will be null
+    		$id = $item->getProduct()->getId();
+    		$full_product = Mage::getModel('catalog/product')->load($id);
     		Mage::log('product: '.$full_product->getName(), null, null, true);
     		
-    		$product_height = $full_product->getData('height');
-    		Mage::log('product height: '.$product_height, null, null, true);
-    		if (is_null($product_height))
-    		{
-    			$product_height = $default_length;
-    		}
-    		$max_length = max($max_length, $product_height);
+    		$product_quantity = $item->getTotalQty();
+    		Mage::log('quantity: '.$product_quantity);
     		
-    		$product_width = $full_product->getData('width');
-    		Mage::log('product width: '.$product_width, null, null, true);
-    		if (is_null($product_width))
-    		{
-    			$product_width = $default_width;
-    		}
+    		// NB getWeight() returns the weight of one product
+    		$item_weight = $item->getWeight();
+    		Mage::log('weight: '.$item_weight.'kg');
+    		$item_weight *= $product_quantity;
+    		$total_weight += $item_weight;
+    		    		
+    		$product_length = $this->getPropertyValue($full_product, 'package_height', $default_length);
+    		$max_length = max($max_length, $product_length);
+    		
+    		$product_width= $this->getPropertyValue($full_product, 'package_width', $default_width);
     		$max_width = max($max_width, $product_width);
     		
-    		$product_depth = $full_product->getData('depth');
-    		Mage::log('product depth: '.$product_depth, null, null, true);
-    		if (is_null($product_depth))
-    		{
-    			$product_depth =$default_depth;
-    		}
+    		$product_depth= $this->getPropertyValue($full_product, 'package_depth', $default_depth);
     		$max_depth= max($max_depth, $product_depth);
     	
-    		// TODO need to times by quantity of the product in this item
-    		$product_volume = $product_depth * $product_height * $product_width;
-    		$total_volume += $product_volume;
+    		// NB getPackagdDepth() etc. returns the depth of one product
+    		$product_volume = $product_depth * $product_length * $product_width;
+    		$item_volume = $product_volume * $product_quantity;
+    		$total_volume += $item_volume;
     	}
 
     	Mage::log('total volume: '.$total_volume, null, null, true);
@@ -120,5 +118,25 @@ class Gareth_RoyalMail_Model_Carrier
     	$shippingRates = Mage::helper('gareth_royalmail/shippingrates');
     	
     	return $shippingRates->getAllMethodNames();
+    }
+    
+    /**
+     * Returns the specified property of the specified product (which should
+     * be fully loaded). Returns the specified default if the property does not
+     * exist or is null.
+     */
+    protected function getPropertyValue($full_product, $property_name, $default)
+    {
+    	$property_value = $full_product->getData($property_name);
+    	if (is_null($property_value))
+    	{
+    		$property_value= $default;
+    		Mage::log('product '.$property_name.': using default '.$property_value, null, null, true);
+    	}
+    	else
+    	{
+    		Mage::log('product '.$property_name.': '.$property_value, null, null, true);
+    	}
+    	return $property_value;
     }
 }
