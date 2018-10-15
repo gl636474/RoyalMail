@@ -1,0 +1,8 @@
+# modman installation file for RoyalMailCarrier
+
+app/code/community/Gareth/RoyalMail   app/code/community/Gareth/RoyalMail
+app/etc/modules/Gareth_RoyalMail.xml  app/etc/modules/Gareth_RoyalMail.xml
+
+@shell echo "Ensure modman update/deploy was run with --copy --force otherwise Magento may"
+@shell echo "not pick up the extension/changes"
+
