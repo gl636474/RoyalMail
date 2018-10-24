@@ -2,6 +2,8 @@
 /**
  * @author gareth
  *
+ * TODO remove some debug logs from all files. Change others to NOTICE.
+ * TODO Log to 'gareth.log' in all files.
  */
 class Gareth_RoyalMail_Helper_Rates extends
     Mage_Core_Helper_Abstract
@@ -15,10 +17,10 @@ class Gareth_RoyalMail_Helper_Rates extends
 	public function getNames()
 	{
 		return array(
-				1=>array('Royal Mail First Class', 'rm1stclass'),	
-				2=>array('Royal Mail Second Class', 'rm2ndclass'),
-				3=>array('Royal Mail First Class Signed For', 'rm1stclasssigned'),
-				4=>array('Royal Mail Second Class Signed For', 'rm2ndclasssigned'),
+				1=>array('First Class', 'rm1stclass'),	
+				2=>array('Second Class', 'rm2ndclass'),
+				3=>array('First Class Signed For', 'rm1stclasssigned'),
+				4=>array('Second Class Signed For', 'rm2ndclasssigned'),
 		);
 	}
 	
@@ -211,7 +213,7 @@ class Gareth_RoyalMail_Helper_Rates extends
 	public function getMethodsForCriteria($length, $width, $depth, $volume, $weight)
 	{
 		$this->sortArgs($length, $width, $depth);
-		Mage::log('getMethodsForCriteria('.$length.'x'.$width.'x'.$depth.'cm '.$volume.'cm3 '.$weight.'kg)', null, null, true);
+		Mage::log('Getting RoyalMail methods for ('.$length.'x'.$width.'x'.$depth.'cm '.$volume.'cm3 '.$weight.'kg)', null, 'gareth.log', true);
 		
 		$methods = array();
 		$prices = $this->getPrices();
@@ -235,13 +237,13 @@ class Gareth_RoyalMail_Helper_Rates extends
 				$methodName = $this->getMethodName($deliveryMethodLookup, $sizeLimitsLookup, $insuranceLookup);
 				$internalName = $this->getInternalMethodName($deliveryMethodLookup, $sizeLimitsLookup, $insuranceLookup);
 				
-				Mage::log('Comparing to '.$internalName.' '.$maxLength.'x'.$maxWidth.'x'.$maxDepth.'cm '.$maxWeight.'kg', null, null, true);
+				//Mage::log('Comparing to '.$internalName.' '.$maxLength.'x'.$maxWidth.'x'.$maxDepth.'cm '.$maxWeight.'kg', null, 'gareth.log', true);
 				
 				if ($length <= $maxLength && $width <= $maxWidth && $depth <= $maxDepth && $weight <= $maxWeight)
 				{
 					$cost = $detail[3];
 					$methods[] = array($internalName, $methodName, $cost);
-					Mage::log('   Selected '.$methodName.' at £'.$cost, null, null, true);
+					//Mage::log('   Selected '.$methodName.' at £'.$cost, null, 'gareth.log', true);
 					break;
 				}
 			}
@@ -263,8 +265,8 @@ class Gareth_RoyalMail_Helper_Rates extends
 	{
 		$args_array = [$a, $b, $c];
 		sort($args_array);
-		$a = $args_array[0];
+		$a = $args_array[2];
 		$b = $args_array[1];
-		$c = $args_array[2];
+		$c = $args_array[0];
 	}
 }
