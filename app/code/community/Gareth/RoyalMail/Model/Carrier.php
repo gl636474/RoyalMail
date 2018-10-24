@@ -1,9 +1,33 @@
 <?php
 /**
- * Notes:
- * Loading helper works OK. If there is an error then Magento will default to
- * the cart page (instead of showing blank or stacktrace).
+ * The Royal Mail Shipping Method. This class requires the following config
+ * settings either in <defaults> in config.xml or set via the admin interface
+ * before this class is first used:
  * 
+ * <pre>
+    &lt;default&gt;
+        &lt;carriers&gt;
+            &lt;gareth_royalmail&gt;
+                &lt;active&gt;1&lt;/active&gt;
+                &lt;sort_order&gt;10&lt;/sort_order&gt;
+                &lt;model&gt;gareth_royalmail/carrier&lt;/model&gt;
+                &lt;title&gt;RoyalMail&lt;/title&gt;
+                &lt;sallowspecific&gt;1&lt;/sallowspecific&gt;
+                &lt;specificcountry&gt;UK&lt;/specificcountry&gt;
+            &lt;/gareth_royalmail&gt;
+        &lt;/carriers&gt;
+    &lt;/default&gt;
+   </pre>
+ *
+ * Note:
+ * Magento will check the <sallowspecific> and <specificcountry> config settings
+ * as well as whether we are enabled. 
+ * 
+ * Note:
+ * An exception in a carrier during checkout will cause  Magento to default to
+ * the unchanged cart page (instead of showing blank or stacktrace).
+ * 
+ * TODO deal with parent/child products - currently they are totally ignored
  * @author gareth
  */
 class Gareth_RoyalMail_Model_Carrier
@@ -18,8 +42,72 @@ class Gareth_RoyalMail_Model_Carrier
     protected $_code = 'gareth_royalmail';
     
     /**
+     * Given an array of Mage_Sales_Model_Quote_Item items, returns the array:
+     * <code>
+     * array($total_volume, $total_weight, $max_length, $max_width, $max_depth)
+     * </code>
+     * 
+     * which is the total volume and weight of all the items in the request,
+     * counting for the quantity of each item.
+     * 
+     * @param array $all_items
+     * @return array
+     */
+    protected function calculateTotalVolumeAndWeight($all_items)
+    {
+    	$total_weight = 0;
+    	$total_volume = 0;
+    	$max_length = 0;
+    	$max_width = 0;
+    	$max_depth = 0;
+    	/* @var Mage_Sales_Model_Quote_Item $item */
+    	foreach ($all_items as $item)
+    	{
+    		// Notes:
+    		//  * Virtual items are not shipped so don't include
+    		//  * IGNORE parent/child products for the moment
+    		//  * If a 'free shipping' item (e.g. due address) then pretend it
+    		//    does not exist for weight/dimensions/price calcs
+    		if ($item->getProduct()->isVirtual() || $item->getHasChildren() || $item->getParentItem() || $item->getFreeShipping())
+    		{
+    			continue;
+    		}
+    		
+    		// must load full product to get EAVs (e.g. is_organic) loaded
+    		// otherwise they will be null
+    		$id = $item->getProduct()->getId();
+    		$full_product = Mage::getModel('catalog/product')->load($id);
+    		
+    		$product_quantity = $item->getTotalQty();
+    		
+    		// NB getWeight() returns the weight of one product
+    		$item_weight = $item->getWeight();
+    		$item_weight *= $product_quantity;
+    		$total_weight += $item_weight;
+    		
+    		$product_length = $this->getPropertyValue($full_product, 'package_height', $default_length);
+    		$max_length = max($max_length, $product_length);
+    		
+    		$product_width= $this->getPropertyValue($full_product, 'package_width', $default_width);
+    		$max_width = max($max_width, $product_width);
+    		
+    		$product_depth= $this->getPropertyValue($full_product, 'package_depth', $default_depth);
+    		$max_depth= max($max_depth, $product_depth);
+    		
+    		// NB getPackagdDepth() etc. returns the depth of one product
+    		$product_volume = $product_depth * $product_length * $product_width;
+    		$item_volume = $product_volume * $product_quantity;
+    		$total_volume += $item_volume;
+    	}
+    	
+    	Mage::log('RoyalMail: total volume: '.$total_volume, null, 'gareth.log');
+    	Mage::log('RoyalMail: total weight: '.$total_weight, null, 'gareth.log');
+    	return array($total_volume, $total_weight, $max_length, $max_width, $max_depth);
+    }
+    
+    /**
      * Returns available shipping rates for this carrier
-     *
+     * 
      * @param Mage_Shipping_Model_Rate_Request $request
      * @return Mage_Shipping_Model_Rate_Result
      */
@@ -40,48 +128,7 @@ class Gareth_RoyalMail_Model_Carrier
     	$default_weight = $config->getDefaultWeight();
     	
     	// inspect all items for total weight/volume and max width/height/depth
-    	$total_weight = 0;
-    	$total_volume = 0;
-		$max_length = 0;
-    	$max_width = 0;
-    	$max_depth = 0;
-    	
-    	//Mage::log('# items = '.count($request->getAllItems()));
-    	foreach ($request->getAllItems() as $item) {
-
-    		// $item is Mage_Sales_Model_Quote_Item
-    		// must load full product to get EAVs (e.g. is_organic) loaded
-    		// otherwise they will be null
-    		$id = $item->getProduct()->getId();
-    		$full_product = Mage::getModel('catalog/product')->load($id);
-    		Mage::log('product: '.$full_product->getName(), null, null, true);
-    		
-    		$product_quantity = $item->getTotalQty();
-    		Mage::log('quantity: '.$product_quantity);
-    		
-    		// NB getWeight() returns the weight of one product
-    		$item_weight = $item->getWeight();
-    		Mage::log('weight: '.$item_weight.'kg');
-    		$item_weight *= $product_quantity;
-    		$total_weight += $item_weight;
-    		    		
-    		$product_length = $this->getPropertyValue($full_product, 'package_height', $default_length);
-    		$max_length = max($max_length, $product_length);
-    		
-    		$product_width= $this->getPropertyValue($full_product, 'package_width', $default_width);
-    		$max_width = max($max_width, $product_width);
-    		
-    		$product_depth= $this->getPropertyValue($full_product, 'package_depth', $default_depth);
-    		$max_depth= max($max_depth, $product_depth);
-    	
-    		// NB getPackagdDepth() etc. returns the depth of one product
-    		$product_volume = $product_depth * $product_length * $product_width;
-    		$item_volume = $product_volume * $product_quantity;
-    		$total_volume += $item_volume;
-    	}
-
-    	Mage::log('total volume: '.$total_volume, null, null, true);
-    	Mage::log('total weight: '.$total_weight, null, null, true);
+    	list($total_volume, $total_weight, $max_length, $max_width, $max_depth) = $this->calculateTotalVolumeAndWeight($request->getAllItems());
     	
     	/** @var Gareth_RoyalMail_Helper_Rates $rates */
     	$rates = Mage::helper('gareth_royalmail/rates');
@@ -89,7 +136,7 @@ class Gareth_RoyalMail_Model_Carrier
 		/** @var Mage_Shipping_Model_Rate_Result $result */
         $result = Mage::getModel('shipping/rate_result');
         
-         foreach ($rates->getMethodsForCriteria($max_length, $max_width, $max_depth, (int)ceil($total_volume), $total_weight) as $rate)
+        foreach ($rates->getMethodsForCriteria($max_length, $max_width, $max_depth, (int)ceil($total_volume), $total_weight) as $rate)
         {
         	/** @var Mage_Shipping_Model_Rate_Result_Method $rate */
         	$mage_rate = Mage::getModel('shipping/rate_result_method');
@@ -97,8 +144,11 @@ class Gareth_RoyalMail_Model_Carrier
         	$mage_rate->setCarrierTitle($this->getConfigData('title'));
         	$mage_rate->setMethod($rate[0]);
         	$mage_rate->setMethodTitle($rate[1]);
-        	$mage_rate->setCost($rate[2]);
-        	$mage_rate->setPrice($rate[2]);
+        	
+        	$shipping_cost = $rate[2];
+        	$shipping_cost = $this->getFinalPriceWithHandlingFee($shipping_cost);
+        	$mage_rate->setCost($shipping_cost);
+        	$mage_rate->setPrice($shipping_cost);
         	
         	$result->append($mage_rate);
         }
@@ -112,8 +162,6 @@ class Gareth_RoyalMail_Model_Carrier
      */
     public function getAllowedMethods()
     {
-    	Mage::log('getAllowedMethods', null, null, true);
-    	
     	/** @var Gareth_RoyalMail_Helper_ShippingRates $shippingRates */
     	$shippingRates = Mage::helper('gareth_royalmail/shippingrates');
     	
@@ -131,11 +179,10 @@ class Gareth_RoyalMail_Model_Carrier
     	if (is_null($property_value))
     	{
     		$property_value= $default;
-    		Mage::log('product '.$property_name.': using default '.$property_value, null, null, true);
     	}
     	else
     	{
-    		Mage::log('product '.$property_name.': '.$property_value, null, null, true);
+    		//Mage::log('product '.$property_name.': '.$property_value, null, null, true);
     	}
     	return $property_value;
     }
