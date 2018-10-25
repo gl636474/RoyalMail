@@ -21,7 +21,8 @@
  *
  * Note:
  * Magento will check the <sallowspecific> and <specificcountry> config settings
- * as well as whether we are enabled. 
+ * but not whether we are enabled. We must check:
+ * <code>$this->getConfigFlag('active')</code> ourselves.
  * 
  * Note:
  * An exception in a carrier during checkout will cause  Magento to default to
