@@ -56,6 +56,15 @@ class Gareth_RoyalMail_Model_Carrier
      */
     protected function calculateTotalVolumeAndWeight($all_items)
     {
+    	
+    	/** @var Gareth_RoyalMail_Helper_Config $config */
+    	$config = Mage::helper('gareth_royalmail/config');
+    	
+    	$default_length = $config->getDefaultLength();
+    	$default_width = $config->getDefaultWidth();
+    	$default_depth = $config->getDefaultDepth();
+    	$default_weight = $config->getDefaultWeight();
+    	
     	$total_weight = 0;
     	$total_volume = 0;
     	$max_length = 0;
@@ -119,14 +128,6 @@ class Gareth_RoyalMail_Model_Carrier
     	{
     		return false;
     	} 
-    	
-    	/** @var Gareth_RoyalMail_Helper_Config $config */
-    	$config = Mage::helper('gareth_royalmail/config');
-    	
-    	$default_length = $config->getDefaultLength();
-    	$default_width = $config->getDefaultWidth();
-    	$default_depth = $config->getDefaultDepth();
-    	$default_weight = $config->getDefaultWeight();
     	
     	// inspect all items for total weight/volume and max width/height/depth
     	list($total_volume, $total_weight, $max_length, $max_width, $max_depth) = $this->calculateTotalVolumeAndWeight($request->getAllItems());
