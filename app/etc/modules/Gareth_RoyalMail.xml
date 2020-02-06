@@ -4,9 +4,9 @@
 		<Gareth_RoyalMail>
 			<active>true</active>
 			<codePool>local</codePool>
+            <depends>
+                <Mage_Shipping />
+            </depends>
 		</Gareth_RoyalMail>
-        <depends>
-            <Mage_Shipping />
-        </depends>
 	</modules>
 </config>
