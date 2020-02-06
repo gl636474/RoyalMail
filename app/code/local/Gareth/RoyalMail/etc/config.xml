@@ -40,9 +40,10 @@
         <carriers>
             <gareth_royalmail>
                 <active>1</active>
-                <sort_order>10</sort_order>
+                <sort_order>0</sort_order>
                 <model>gareth_royalmail/carrier</model>
-                <title>RoyalMail</title>
+                <name>Royal Mail</name>
+                <title>Royal Mail</title>
                 <sallowspecific>1</sallowspecific>
                 <specificcountry>UK</specificcountry>
             </gareth_royalmail>
