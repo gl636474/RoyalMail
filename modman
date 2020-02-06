@@ -6,3 +6,7 @@ app/etc/modules/Gareth_RoyalMail.xml  app/etc/modules/Gareth_RoyalMail.xml
 @shell echo "Ensure modman update/deploy was run with --copy --force otherwise Magento may"
 @shell echo "not pick up the extension/changes"
 
+# DO NOT USE "$PROJECT/mage clear-cache"
+# It will screw up Magento - don't know why
+#
+@shell php "$MODULE/flush_config_cache.php" --mage-dir="$PROJECT"

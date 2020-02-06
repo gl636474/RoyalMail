@@ -123,6 +123,8 @@ class Gareth_RoyalMail_Model_Carrier
      */
     public function collectRates(Mage_Shipping_Model_Rate_Request $request)
     {
+    	Mage::log('Gareth_RoyalMail_Model_Carrier::collectRates called', Zend_Log::INFO, 'gareth.log');
+    	
     	/** Check we are enabled */
     	if (!$this->getConfigFlag('active'))
     	{
@@ -140,6 +142,8 @@ class Gareth_RoyalMail_Model_Carrier
         
         foreach ($rates->getMethodsForCriteria($max_length, $max_width, $max_depth, (int)ceil($total_volume), $total_weight) as $rate)
         {
+        	Mage::log(" -> $rate[0] / $rate[1] = £$rate[2]", Zend_Log::DEBUG, 'gareth.log');
+        	
         	/** @var Mage_Shipping_Model_Rate_Result_Method $rate */
         	$mage_rate = Mage::getModel('shipping/rate_result_method');
         	$mage_rate->setCarrier($this->_code);
@@ -164,6 +168,8 @@ class Gareth_RoyalMail_Model_Carrier
      */
     public function getAllowedMethods()
     {
+    	Mage::log('Gareth_RoyalMail_Model_Carrier::getAllowedMethods called', Zend_Log::INFO, 'gareth.log');
+    	
     	/** @var Gareth_RoyalMail_Helper_Rates $shippingRates */
     	$shippingRates = Mage::helper('gareth_royalmail/rates');
     	
