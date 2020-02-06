@@ -3,7 +3,7 @@
     <sections>
         <carriers>
             <groups>
-                <gareth_royalmail translate="label">
+                <Gareth_RoyalMail translate="label">
                     <label>Gareth RoyalMail Carrier</label>
                     <sort_order>2</sort_order>
                     <show_in_default>1</show_in_default>
@@ -48,7 +48,7 @@
                             <can_be_empty>1</can_be_empty>
                         </specificcountry>
                    </fields>
-                </gareth_royalmail>
+                </Gareth_RoyalMail>
             </groups>
         </carriers>
     </sections>

@@ -1,9 +1,12 @@
 <?xml version="1.0"?>
 <config>
 	<modules>
-		<gareth_royalmail>
+		<Gareth_RoyalMail>
 			<active>true</active>
 			<codePool>local</codePool>
-		</gareth_royalmail>
+		</Gareth_RoyalMail>
+        <depends>
+            <Mage_Shipping />
+        </depends>
 	</modules>
 </config>

@@ -164,8 +164,8 @@ class Gareth_RoyalMail_Model_Carrier
      */
     public function getAllowedMethods()
     {
-    	/** @var Gareth_RoyalMail_Helper_ShippingRates $shippingRates */
-    	$shippingRates = Mage::helper('gareth_royalmail/shippingrates');
+    	/** @var Gareth_RoyalMail_Helper_Rates $shippingRates */
+    	$shippingRates = Mage::helper('gareth_royalmail/rates');
     	
     	return $shippingRates->getAllMethodNames();
     }

@@ -194,7 +194,7 @@ class Gareth_RoyalMail_Helper_Rates extends
 				$insurance = $detail[1];
 				
 				$methodName = $this->getMethodName($deliveryMethodLookup, $size, $insurance);
-				$internameName = $this->getInternalMethodName($deliveryMethodLookup, $size, $insurance);
+				$internalName = $this->getInternalMethodName($deliveryMethodLookup, $size, $insurance);
 				
 				$methodNames[$internalName] = $methodName;
 			}
