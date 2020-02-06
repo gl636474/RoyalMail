@@ -3,10 +3,31 @@
 app/code/local/Gareth/RoyalMail   app/code/local/Gareth/RoyalMail
 app/etc/modules/Gareth_RoyalMail.xml  app/etc/modules/Gareth_RoyalMail.xml
 
-@shell echo "Ensure modman update/deploy was run with --copy --force otherwise Magento may"
-@shell echo "not pick up the extension/changes"
+# Create logs - Magento 1.9.4.x needs these files to already exist
+@shell mkdir "$PROJECT/var/log"
+@shell touch "$PROJECT/var/log/system.log"
+@shell touch "$PROJECT/var/log/gareth.log"
+@shell touch "$PROJECT/var/log/exception.log"
+
+# Set global read permissions on static files (CSS/Javascript)
+@shell chmod -R a+r "$PROJECT/js"
+@shell chmod -R a+X "$PROJECT/js"
+@shell chmod -R a+r "$PROJECT/skin"
+@shell chmod -R a+X "$PROJECT/skin"
+@shell chmod -R a+r "$PROJECT/media"
+@shell chmod -R a+X "$PROJECT/media"
+
+# Clear locks if they exist
+@shell rm -rf "$PROJECT/var/*.lock"
+
 
 # DO NOT USE "$PROJECT/mage clear-cache"
 # It will screw up Magento - don't know why
 #
 @shell php "$MODULE/flush_config_cache.php" --mage-dir="$PROJECT"
+
+@shell echo ""
+@shell echo "Ensure modman update/deploy was run with --copy --force otherwise Magento may"
+@shell echo "not pick up the extension/changes"
+
+
